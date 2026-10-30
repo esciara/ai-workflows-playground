@@ -1,0 +1,60 @@
+# Throwaway WP1 spike: can claude-code-action run read-only, OAuth token only, no GitHub token, no id-token?
+name: wp1 spike
+on:
+  push:
+    branches: [wp1-spike]
+
+permissions:
+  contents: read
+
+jobs:
+  main-action:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      json: ${{ steps.claude.outputs.structured_output }}
+    steps:
+      - id: claude
+        uses: anthropics/claude-code-action@6d5ae526d25ce88daa2200be073e1a373167f064 # v1.0.265
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: 'Reply with JSON {"reply": "pong"} and nothing else.'
+          claude_args: >-
+            --max-turns 2
+            --json-schema '{"type":"object","properties":{"reply":{"type":"string"}},"required":["reply"],"additionalProperties":false}'
+
+  base-action:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      json: ${{ steps.claude.outputs.structured_output }}
+    steps:
+      - id: claude
+        uses: anthropics/claude-code-action/base-action@6d5ae526d25ce88daa2200be073e1a373167f064 # v1.0.265
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: 'Reply with JSON {"reply": "pong"} and nothing else.'
+          claude_args: >-
+            --max-turns 2
+            --json-schema '{"type":"object","properties":{"reply":{"type":"string"}},"required":["reply"],"additionalProperties":false}'
+
+  consume:
+    needs: [main-action, base-action]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - env:
+          MAIN_JSON: ${{ needs.main-action.outputs.json }}
+          BASE_JSON: ${{ needs.base-action.outputs.json }}
+          MAIN_RESULT: ${{ needs.main-action.result }}
+          BASE_RESULT: ${{ needs.base-action.result }}
+        run: |
+          echo "main-action: $MAIN_RESULT json=$MAIN_JSON"
+          echo "base-action: $BASE_RESULT json=$BASE_JSON"
+          echo "$BASE_JSON" | jq -e '.reply == "pong"'
