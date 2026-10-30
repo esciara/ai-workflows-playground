@@ -1,0 +1,10 @@
+# ai-workflows config — see https://github.com/esciara/ai-workflows (schema/ai-workflows.schema.json)
+maintainers: [esciara]
+default_branch: main
+setup: pip install -e '.[test]'
+test: pytest
+risk_paths:
+  high: [".github/**"]
+workflows:
+  review: true
+  triage: false
