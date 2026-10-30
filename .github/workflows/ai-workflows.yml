@@ -25,11 +25,11 @@ concurrency:
 
 jobs:
   config:
-    uses: esciara/ai-workflows/.github/workflows/config.yml@wp0-bootstrap
+    uses: esciara/ai-workflows/.github/workflows/config.yml@main
     permissions:
       contents: read
     with:
-      ai_workflows_ref: wp0-bootstrap
+      ai_workflows_ref: main
       config_ref: ${{ inputs.config_ref || '' }}
 
   # Workflow A (WP2+): enabled once review.yml exists.
