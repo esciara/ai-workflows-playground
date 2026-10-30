@@ -1,10 +1,4 @@
-# ai-workflows config — see https://github.com/esciara/ai-workflows (schema/ai-workflows.schema.json)
-maintainers: [esciara]
-default_branch: main
-setup: pip install -e '.[test]'
-test: pytest
-risk_paths:
-  high: [".github/**"]
+# Deliberately invalid (WP0 negative check): unknown key, no maintainers.
+reviewers: [esciara]
 workflows:
   review: true
-  triage: false
