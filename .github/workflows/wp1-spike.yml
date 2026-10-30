@@ -3,6 +3,8 @@ name: wp1 spike
 on:
   push:
     branches: [wp1-spike]
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: read
