@@ -25,24 +25,24 @@ concurrency:
 
 jobs:
   config:
-    uses: esciara/ai-workflows/.github/workflows/config.yml@wp1-shared-runtime
+    uses: esciara/ai-workflows/.github/workflows/config.yml@main
     permissions:
       contents: read
     with:
-      ai_workflows_ref: wp1-shared-runtime
+      ai_workflows_ref: main
       config_ref: ${{ inputs.config_ref || '' }}
 
   # Slash commands (WP1: /ping). Labels sync on every call.
   commands:
     needs: config
     if: needs.config.outputs.enabled == 'true' && github.event_name == 'issue_comment'
-    uses: esciara/ai-workflows/.github/workflows/commands.yml@wp1-shared-runtime
+    uses: esciara/ai-workflows/.github/workflows/commands.yml@main
     permissions:
       contents: read
       issues: write
       pull-requests: write
     with:
-      ai_workflows_ref: wp1-shared-runtime
+      ai_workflows_ref: main
       config: ${{ needs.config.outputs.config }}
     secrets:
       CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
