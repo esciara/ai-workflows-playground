@@ -1,0 +1,33 @@
+name: exp-arch-review
+on:
+  push:
+    branches: [exp-arch-review-head]
+permissions:
+  pull-requests: write
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      R: ${{ github.repository }}
+      P1: '27'
+      P2: '28'
+    steps:
+      - run: |
+          set +e
+          q() { gh api graphql -f query="{repository(owner:\"esciara\",name:\"ai-workflows-playground\"){pullRequest(number:$P1){reviewDecision latestOpinionatedReviews(first:5){nodes{author{login} state}} latestReviews(first:5){nodes{author{login} state}}}}}" --jq '.data.repository.pullRequest|tojson'; }
+          code() { gh api "$@" --silent 2>&1 | tail -1; echo " rc=$?"; }
+          echo "STATE0 $(q)"
+          RC=$(gh api -X POST repos/$R/pulls/$P1/reviews -f event=REQUEST_CHANGES -f body="exp-arch: request changes" --jq .id); echo "RC review id=$RC"
+          sleep 3; echo "STATE1-after-REQUEST_CHANGES $(q)"
+          gh api -X POST repos/$R/pulls/$P1/reviews -f event=COMMENT -f body="exp-arch: comment" --jq '.state'
+          sleep 3; echo "STATE2-after-COMMENT $(q)"
+          echo "DISMISS: $(gh api -X PUT repos/$R/pulls/$P1/reviews/$RC/dismissals -f message='exp-arch dismiss' --jq .state 2>&1)"
+          sleep 3; echo "STATE3-after-DISMISS $(q)"
+          echo "--- claim 8 (pull-requests: write only) on PR $P2"
+          echo "EDIT title/body: $(gh api -X PATCH repos/$R/pulls/$P2 -f title='exp-arch: merge-perm probe (test-fixture) [edited]' -f body='edited by GITHUB_TOKEN' --jq .title 2>&1)"
+          echo "CLOSE: $(gh api -X PATCH repos/$R/pulls/$P2 -f state=closed --jq .state 2>&1)"
+          echo "REOPEN: $(gh api -X PATCH repos/$R/pulls/$P2 -f state=open --jq .state 2>&1)"
+          echo "MERGE: $(gh api -X PUT repos/$R/pulls/$P2/merge -f merge_method=merge 2>&1)"
+          echo "PUSH(contents API): $(gh api -X PUT repos/$R/contents/exp-arch-push.txt -f message=exp -f content=ZXhwCg== -f branch=exp-arch-review-head 2>&1 | tail -2)"
+          echo "UPDATE-BRANCH: $(gh api -X PUT repos/$R/pulls/$P2/update-branch 2>&1 | tail -2)"
