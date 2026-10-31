@@ -1,0 +1,81 @@
+# e2e caller (ADR-0028): runs esciara/ai-workflows@e2e-target, only for e2e items:
+# - pull_request events: head branch starts with `e2e/` AND the head repo is this repo (fork PRs never route by
+#   prefix), or the PR is labelled `e2e-target`. The prefix lets a PR's first `opened` event route here: the pulls API
+#   cannot set labels at creation.
+# - issues and issue_comment events (comments on PRs too): labelled `e2e-target`. A comment payload has no head ref
+#   (github.head_ref is empty), so a PR's comments route by label; the e2e helpers label every test PR after creation.
+# A test holds the e2e slot (ADR-0026), pushes its WP branch to `e2e-target`, then opens e2e items; the normal
+# caller (ai-workflows.yml) skips exactly those. Config comes from tests/e2e/config/playground.yml at that commit, not from
+# .github/ai-workflows.yml here, so a WP changes its e2e config on its own branch. Mirrors ai-workflows.yml otherwise.
+# Own-workflow refs are branches on purpose (ADR-0022); pinning comes with WP14.
+name: AI workflows (e2e)
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+  issue_comment:
+    types: [created]
+  issues:
+    types: [opened]
+
+concurrency:
+  group: ai-workflows-e2e-${{ github.event.pull_request.number || github.event.issue.number || github.run_id }}
+  cancel-in-progress: false
+
+# Least privilege by default (ADR-0017); every job below grants what its called workflow needs.
+permissions: {}
+
+jobs:
+  # The routing gate, checked on every event (issues, issue_comment, pull_request). Every other job needs config.
+  # TWIN: the normal caller's `config` job (ai-workflows.yml) has the exact negation of this `if:`; change both together.
+  config:
+    if: ${{ (startsWith(github.head_ref, 'e2e/') && github.event.pull_request.head.repo.full_name == github.repository) || contains(github.event.pull_request.labels.*.name, 'e2e-target') || contains(github.event.issue.labels.*.name, 'e2e-target') }}
+    uses: esciara/ai-workflows/.github/workflows/config.yml@e2e-target
+    permissions:
+      contents: read
+    with:
+      e2e_config: playground.yml
+
+  commands:
+    needs: config
+    if: needs.config.outputs.enabled == 'true' && github.event_name == 'issue_comment'
+    uses: esciara/ai-workflows/.github/workflows/commands.yml@e2e-target
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    with:
+      config: ${{ needs.config.outputs.config }}
+    secrets:
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+
+  # Workflow A (WP2+). review.yml is a placeholder on ai-workflows main until WP2 lands.
+  review:
+    needs: config
+    if: needs.config.outputs.review == 'true' && (github.event_name == 'pull_request' || (github.event_name == 'issue_comment' && github.event.issue.pull_request))
+    uses: esciara/ai-workflows/.github/workflows/review.yml@e2e-target
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      checks: read
+    with:
+      config: ${{ needs.config.outputs.config }}
+    secrets:
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+
+  # Workflow B (WP5+). triage.yml is a placeholder on ai-workflows main until WP5 lands.
+  triage:
+    needs: config
+    if: needs.config.outputs.triage == 'true' && (github.event_name == 'issues' || (github.event_name == 'issue_comment' && !github.event.issue.pull_request))
+    uses: esciara/ai-workflows/.github/workflows/triage.yml@e2e-target
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    with:
+      config: ${{ needs.config.outputs.config }}
+    secrets:
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
