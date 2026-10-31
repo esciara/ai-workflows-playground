@@ -1,0 +1,75 @@
+# e2e caller (ADR-0028): runs esciara/ai-workflows@e2e-target, only for issues and PRs labelled `e2e-target`.
+# A test holds the e2e slot (ADR-0026), pushes its WP branch to `e2e-target`, then opens labelled items; the normal
+# caller (ai-workflows.yml) skips those. Config comes from tests/e2e/config/playground.yml at that commit, not from
+# .github/ai-workflows.yml here, so a WP changes its e2e config on its own branch. Mirrors ai-workflows.yml otherwise.
+# Own-workflow refs are branches on purpose (ADR-0022); pinning comes with WP14.
+name: AI workflows (e2e)
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+  issue_comment:
+    types: [created]
+  issues:
+    types: [opened]
+
+concurrency:
+  group: ai-workflows-e2e-${{ github.event.pull_request.number || github.event.issue.number || github.run_id }}
+  cancel-in-progress: false
+
+# Least privilege by default (ADR-0017); every job below grants what its called workflow needs.
+permissions: {}
+
+jobs:
+  # The label gate, checked on every event (issues, issue_comment, pull_request). Every other job needs config.
+  config:
+    if: ${{ contains(github.event.issue.labels.*.name, 'e2e-target') || contains(github.event.pull_request.labels.*.name, 'e2e-target') }}
+    uses: esciara/ai-workflows/.github/workflows/config.yml@e2e-target
+    permissions:
+      contents: read
+    with:
+      e2e_config: playground.yml
+
+  commands:
+    needs: config
+    if: needs.config.outputs.enabled == 'true' && github.event_name == 'issue_comment'
+    uses: esciara/ai-workflows/.github/workflows/commands.yml@e2e-target
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    with:
+      config: ${{ needs.config.outputs.config }}
+    secrets:
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+
+  # Workflow A (WP2+). review.yml is a placeholder on ai-workflows main until WP2 lands.
+  review:
+    needs: config
+    if: needs.config.outputs.review == 'true' && (github.event_name == 'pull_request' || (github.event_name == 'issue_comment' && github.event.issue.pull_request))
+    uses: esciara/ai-workflows/.github/workflows/review.yml@e2e-target
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      checks: read
+    with:
+      config: ${{ needs.config.outputs.config }}
+    secrets:
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+
+  # Workflow B (WP5+). triage.yml is a placeholder on ai-workflows main until WP5 lands.
+  triage:
+    needs: config
+    if: needs.config.outputs.triage == 'true' && (github.event_name == 'issues' || (github.event_name == 'issue_comment' && !github.event.issue.pull_request))
+    uses: esciara/ai-workflows/.github/workflows/triage.yml@e2e-target
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    with:
+      config: ${{ needs.config.outputs.config }}
+    secrets:
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}

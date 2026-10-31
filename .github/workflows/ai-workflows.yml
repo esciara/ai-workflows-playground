@@ -27,7 +27,9 @@ concurrency:
 permissions: {}
 
 jobs:
+  # Items labelled `e2e-target` belong to caller-e2e.yml (ADR-0028); this caller skips them. Every other job needs config.
   config:
+    if: ${{ !contains(github.event.issue.labels.*.name, 'e2e-target') && !contains(github.event.pull_request.labels.*.name, 'e2e-target') }}
     uses: esciara/ai-workflows/.github/workflows/config.yml@main
     permissions:
       contents: read
