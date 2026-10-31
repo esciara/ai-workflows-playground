@@ -1,11 +1,11 @@
 # [exp] concurrency + workflow-file-source experiment. Not for the default branch.
 name: exp-concurrency
-run-name: "exp-concurrency marker=M3 ${{ github.event.action }}"
+run-name: "exp-concurrency marker=M4 ${{ github.event.action }}"
 on:
   pull_request:
     types: [opened, synchronize]
 concurrency:
-  group: exp-fixed-group
+  group: exp-fixed-group-${{ github.head_ref }}
   cancel-in-progress: false
 permissions:
   contents: read
@@ -14,5 +14,18 @@ jobs:
     if: startsWith(github.head_ref, 'exp/')
     runs-on: ubuntu-latest
     steps:
-      - run: echo "marker=M3 sha=$GITHUB_SHA ref=$GITHUB_REF head=${{ github.event.pull_request.head.sha }}"
-      - run: sleep 60
+      - run: echo "marker=M4 sha=$GITHUB_SHA ref=$GITHUB_REF head=${{ github.event.pull_request.head.sha }}"
+      - run: sleep 5
+  label:
+    if: startsWith(github.head_ref, 'exp/')
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          N: ${{ github.event.pull_request.number }}
+        run: |
+          echo "fork=${{ github.event.pull_request.head.repo.fork }}"
+          gh api -X POST "repos/$GITHUB_REPOSITORY/issues/$N/labels" -f "labels[]=exp-autocreate-gha-${{ github.event.pull_request.head.repo.fork && 'fork' || 'same' }}" -q '.[].name' || echo "LABEL_POST_FAILED"
