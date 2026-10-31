@@ -30,7 +30,7 @@ jobs:
   # e2e routing (ADR-0028): items that caller-e2e.yml handles are skipped here; every other job needs config.
   # TWIN: this `if:` is the exact negation of the `config` job's `if:` in caller-e2e.yml; change both together.
   config:
-    if: ${{ !(startsWith(github.head_ref, 'e2e/') || contains(github.event.pull_request.labels.*.name, 'e2e-target') || contains(github.event.issue.labels.*.name, 'e2e-target')) }}
+    if: ${{ !((startsWith(github.head_ref, 'e2e/') && github.event.pull_request.head.repo.full_name == github.repository) || contains(github.event.pull_request.labels.*.name, 'e2e-target') || contains(github.event.issue.labels.*.name, 'e2e-target')) }}
     uses: esciara/ai-workflows/.github/workflows/config.yml@main
     permissions:
       contents: read
