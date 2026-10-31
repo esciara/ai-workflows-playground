@@ -28,7 +28,7 @@ permissions: {}
 
 jobs:
   config:
-    uses: esciara/ai-workflows/.github/workflows/config.yml@security-hardening
+    uses: esciara/ai-workflows/.github/workflows/config.yml@main
     permissions:
       contents: read
     with:
@@ -38,7 +38,7 @@ jobs:
   labels:
     needs: config
     if: needs.config.outputs.enabled == 'true' && (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule')
-    uses: esciara/ai-workflows/.github/workflows/labels.yml@security-hardening
+    uses: esciara/ai-workflows/.github/workflows/labels.yml@main
     permissions:
       issues: write
 
@@ -46,7 +46,7 @@ jobs:
   commands:
     needs: config
     if: needs.config.outputs.enabled == 'true' && github.event_name == 'issue_comment'
-    uses: esciara/ai-workflows/.github/workflows/commands.yml@security-hardening
+    uses: esciara/ai-workflows/.github/workflows/commands.yml@main
     permissions:
       contents: read
       issues: write
@@ -60,7 +60,7 @@ jobs:
   # review:
   #   needs: config
   #   if: needs.config.outputs.review == 'true' && (github.event_name == 'pull_request' || (github.event_name == 'issue_comment' && github.event.issue.pull_request))
-  #   uses: esciara/ai-workflows/.github/workflows/review.yml@security-hardening
+  #   uses: esciara/ai-workflows/.github/workflows/review.yml@main
   #   permissions:
   #     contents: read
   #     pull-requests: write
@@ -75,7 +75,7 @@ jobs:
   # triage:
   #   needs: config
   #   if: needs.config.outputs.triage == 'true' && (github.event_name == 'issues' || github.event_name == 'schedule' || (github.event_name == 'issue_comment' && !github.event.issue.pull_request))
-  #   uses: esciara/ai-workflows/.github/workflows/triage.yml@security-hardening
+  #   uses: esciara/ai-workflows/.github/workflows/triage.yml@main
   #   permissions:
   #     contents: write
   #     issues: write
