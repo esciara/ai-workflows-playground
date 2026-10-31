@@ -1,0 +1,8 @@
+name: exp-arch-caller
+on:
+  push:
+    branches: [exp-arch-caller]
+permissions: {}
+jobs:
+  call:
+    uses: esciara/ai-workflows-playground/.github/workflows/exp-arch-reusable.yml@exp-arch-callee

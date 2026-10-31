@@ -1,0 +1,12 @@
+name: exp-arch-missing
+on:
+  push:
+    branches: [exp-arch-caller]
+permissions: {}
+jobs:
+  plain:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo plain-job-ran
+  missing:
+    uses: esciara/ai-workflows-playground/.github/workflows/exp-arch-does-not-exist.yml@exp-arch-callee
