@@ -1,0 +1,31 @@
+name: exp-arch-reusable
+on:
+  workflow_call:
+jobs:
+  probe-noperm:
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: contexts
+        env:
+          JOB_WF_SHA: ${{ job.workflow_sha }}
+          JOB_WF_REF: ${{ job.workflow_ref }}
+          JOB_WF_REPO: ${{ job.workflow_repository }}
+          GH_WF_SHA: ${{ github.workflow_sha }}
+          GH_WF_REF: ${{ github.workflow_ref }}
+          GH_SHA: ${{ github.sha }}
+          TOK: ${{ github.token }}
+        run: |
+          echo "job.workflow_sha=[$JOB_WF_SHA]"
+          echo "job.workflow_ref=[$JOB_WF_REF]"
+          echo "job.workflow_repository=[$JOB_WF_REPO]"
+          echo "github.workflow_sha=[$GH_WF_SHA]"
+          echo "github.workflow_ref=[$GH_WF_REF]"
+          echo "github.sha=[$GH_SHA]"
+          echo "token_length=${#TOK}"
+          echo "env_GITHUB_TOKEN_length=${#GITHUB_TOKEN}"
+          code() { curl -s -o /dev/null -w '%{http_code}' "$@"; }
+          echo "GET repo (auth): $(code -H "Authorization: Bearer $TOK" https://api.github.com/repos/${{ github.repository }})"
+          echo "GET issues (auth): $(code -H "Authorization: Bearer $TOK" https://api.github.com/repos/${{ github.repository }}/issues?per_page=1)"
+          echo "GET actions/runs (auth): $(code -H "Authorization: Bearer $TOK" https://api.github.com/repos/${{ github.repository }}/actions/runs?per_page=1)"
+          echo "POST label (auth): $(code -X POST -H "Authorization: Bearer $TOK" -d '{"name":"exp-arch-should-fail"}' https://api.github.com/repos/${{ github.repository }}/labels)"
