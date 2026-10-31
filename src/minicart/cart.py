@@ -72,3 +72,10 @@ class Cart:
     def clear(self) -> None:
         self._items.clear()
         self.discount = Decimal("0")
+
+    def apply_bulk_discount(self, min_items: int, percent: Decimal | str) -> Decimal:
+        """Take `percent` % off the subtotal when the cart holds at least `min_items` items; return the discount."""
+        if self.item_count() < min_items:
+            return Decimal("0")
+        self.discount = round_money(self.subtotal() * to_decimal(percent))
+        return self.discount
