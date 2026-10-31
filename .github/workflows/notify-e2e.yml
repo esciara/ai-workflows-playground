@@ -1,0 +1,20 @@
+# Chat notification e2e (WP11a, ADR-0024): on a manual run, notify.yml at `e2e-target` sends one test message per
+# channel (Slack, Telegram), linking to this run. Dispatch-only, so a slot holder without notify.yml never breaks the
+# event-driven callers. tests/e2e/test_wp11a.py in esciara/ai-workflows dispatches it while holding the e2e slot.
+name: AI workflows notify (e2e)
+on:
+  workflow_dispatch:
+
+# Least privilege by default (ADR-0017).
+permissions: {}
+
+jobs:
+  notify-test:
+    uses: esciara/ai-workflows/.github/workflows/notify.yml@e2e-target
+    permissions: {}
+    with:
+      channels: slack,telegram
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
