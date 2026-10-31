@@ -1,7 +1,7 @@
 # .github/workflows/ai-workflows.yml in a TARGET repo.
 # Events in, one call per reusable workflow out. Secrets are passed explicitly (never `inherit`).
 # Each job grants the most its called workflow needs; the called jobs narrow it with their own `permissions:`.
-# Replace @main / ai_workflows_ref: main with a branch or tag of esciara/ai-workflows if needed.
+# Replace @main with a branch or tag of esciara/ai-workflows if needed; scripts load from the same commit (ADR-0019).
 name: AI workflows
 on:
   pull_request:
@@ -11,7 +11,7 @@ on:
   issues:
     types: [opened]
   schedule:
-    - cron: '17 5 * * *'          # daily jobs: reporter silence (WP7)
+    - cron: '17 5 * * *'          # daily jobs: labels sync, reporter silence (WP7)
   workflow_dispatch:
     inputs:
       config_ref:
@@ -23,26 +23,35 @@ concurrency:
   group: ai-workflows-${{ github.event.pull_request.number || github.event.issue.number || github.run_id }}
   cancel-in-progress: false
 
+# Least privilege by default (ADR-0017); every job below grants what its called workflow needs.
+permissions: {}
+
 jobs:
   config:
-    uses: esciara/ai-workflows/.github/workflows/config.yml@main
+    uses: esciara/ai-workflows/.github/workflows/config.yml@security-hardening
     permissions:
       contents: read
     with:
-      ai_workflows_ref: main
       config_ref: ${{ inputs.config_ref || '' }}
 
-  # Slash commands (WP1: /ping). Labels sync on every call.
+  # Label set (ADR-0023): only on a manual run or the daily schedule. Run the workflow once by hand after install.
+  labels:
+    needs: config
+    if: needs.config.outputs.enabled == 'true' && (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule')
+    uses: esciara/ai-workflows/.github/workflows/labels.yml@security-hardening
+    permissions:
+      issues: write
+
+  # Slash commands (WP1: /ping).
   commands:
     needs: config
     if: needs.config.outputs.enabled == 'true' && github.event_name == 'issue_comment'
-    uses: esciara/ai-workflows/.github/workflows/commands.yml@main
+    uses: esciara/ai-workflows/.github/workflows/commands.yml@security-hardening
     permissions:
       contents: read
       issues: write
       pull-requests: write
     with:
-      ai_workflows_ref: main
       config: ${{ needs.config.outputs.config }}
     secrets:
       CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -51,14 +60,13 @@ jobs:
   # review:
   #   needs: config
   #   if: needs.config.outputs.review == 'true' && (github.event_name == 'pull_request' || (github.event_name == 'issue_comment' && github.event.issue.pull_request))
-  #   uses: esciara/ai-workflows/.github/workflows/review.yml@main
+  #   uses: esciara/ai-workflows/.github/workflows/review.yml@security-hardening
   #   permissions:
   #     contents: read
   #     pull-requests: write
   #     issues: write
   #     checks: read
   #   with:
-  #     ai_workflows_ref: main
   #     config: ${{ needs.config.outputs.config }}
   #   secrets:
   #     CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -67,13 +75,12 @@ jobs:
   # triage:
   #   needs: config
   #   if: needs.config.outputs.triage == 'true' && (github.event_name == 'issues' || github.event_name == 'schedule' || (github.event_name == 'issue_comment' && !github.event.issue.pull_request))
-  #   uses: esciara/ai-workflows/.github/workflows/triage.yml@main
+  #   uses: esciara/ai-workflows/.github/workflows/triage.yml@security-hardening
   #   permissions:
   #     contents: write
   #     issues: write
   #     pull-requests: write
   #   with:
-  #     ai_workflows_ref: main
   #     config: ${{ needs.config.outputs.config }}
   #   secrets:
   #     CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
