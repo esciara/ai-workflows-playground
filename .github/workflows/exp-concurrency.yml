@@ -1,6 +1,6 @@
 # [exp] concurrency + workflow-file-source experiment. Not for the default branch.
 name: exp-concurrency
-run-name: "exp-concurrency marker=M2 ${{ github.event.action }}"
+run-name: "exp-concurrency marker=M3 ${{ github.event.action }}"
 on:
   pull_request:
     types: [opened, synchronize]
@@ -14,5 +14,5 @@ jobs:
     if: startsWith(github.head_ref, 'exp/')
     runs-on: ubuntu-latest
     steps:
-      - run: echo "marker=M2 sha=$GITHUB_SHA ref=$GITHUB_REF head=${{ github.event.pull_request.head.sha }}"
+      - run: echo "marker=M3 sha=$GITHUB_SHA ref=$GITHUB_REF head=${{ github.event.pull_request.head.sha }}"
       - run: sleep 60
