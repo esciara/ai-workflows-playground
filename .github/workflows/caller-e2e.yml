@@ -11,18 +11,17 @@
 name: AI workflows (e2e)
 on:
   pull_request:
-    types: [opened, reopened, synchronize, ready_for_review, labeled]  # labeled: only the `off` job (ADR-0045)
+    types: [opened, reopened, synchronize, ready_for_review]
   # Fork PRs only, API calls only (ADR-0044): a fork push removes a stale verdict label. Never checks out the PR.
   pull_request_target:
     types: [synchronize]
   issue_comment:
     types: [created]
   issues:
-    types: [opened, labeled]
+    types: [opened]
 
-# `labeled` events run only the `off` job (review and triage skip them). A `labeled` run gets a group of its own: it must never queue behind, or replace, the item's pending run (ADR-0045).
 concurrency:
-  group: ai-workflows-e2e-${{ github.event.action == 'labeled' && format('labeled-{0}', github.run_id) || format('{0}{1}', github.event_name == 'pull_request_target' && 'fork-push-' || '', github.event.pull_request.number || github.event.issue.number || github.run_id) }}
+  group: ai-workflows-e2e-${{ github.event_name == 'pull_request_target' && 'fork-push-' || '' }}${{ github.event.pull_request.number || github.event.issue.number || github.run_id }}
   cancel-in-progress: false
 
 # Least privilege by default (ADR-0017); every job below grants what its called workflow needs.
@@ -38,14 +37,6 @@ jobs:
       contents: read
     with:
       e2e_config: playground.yml
-
-  # Kill switch (ADR-0045): `ai: off` added to an e2e item cancels this workflow's in-flight runs for it.
-  "off":  # quoted: YAML 1.1 parsers read a bare `off` as false
-    if: "${{ (github.event_name == 'issues' || github.event_name == 'pull_request') && github.event.action == 'labeled' && github.event.label.name == 'ai: off' && ((startsWith(github.head_ref, 'e2e/') && github.event.pull_request.head.repo.full_name == github.repository) || contains(github.event.pull_request.labels.*.name, 'e2e-target') || contains(github.event.issue.labels.*.name, 'e2e-target')) }}"
-    uses: esciara/ai-workflows/.github/workflows/off.yml@e2e-target
-    permissions:
-      contents: read
-      actions: write
 
   commands:
     needs: config
@@ -63,7 +54,7 @@ jobs:
   # Workflow A (WP2+). review.yml is a placeholder on ai-workflows main until WP2 lands.
   review:
     needs: config
-    if: needs.config.outputs.review == 'true' && github.event.action != 'labeled' && (github.event_name == 'pull_request' || (github.event_name == 'issue_comment' && github.event.issue.pull_request))
+    if: needs.config.outputs.review == 'true' && (github.event_name == 'pull_request' || (github.event_name == 'issue_comment' && github.event.issue.pull_request))
     uses: esciara/ai-workflows/.github/workflows/review.yml@e2e-target
     permissions:
       contents: read
@@ -86,7 +77,7 @@ jobs:
   # Workflow B (WP5+). triage.yml is a placeholder on ai-workflows main until WP5 lands.
   triage:
     needs: config
-    if: needs.config.outputs.triage == 'true' && github.event.action != 'labeled' && (github.event_name == 'issues' || (github.event_name == 'issue_comment' && !github.event.issue.pull_request))
+    if: needs.config.outputs.triage == 'true' && (github.event_name == 'issues' || (github.event_name == 'issue_comment' && !github.event.issue.pull_request))
     uses: esciara/ai-workflows/.github/workflows/triage.yml@e2e-target
     permissions:
       contents: write
