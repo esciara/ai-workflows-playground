@@ -20,7 +20,7 @@ on:
   issues:
     types: [opened, labeled]
 
-# A `labeled` run gets a group of its own: it must never queue behind, or replace, the item's pending run (ADR-0045).
+# `labeled` events run only the `off` job (review and triage skip them). A `labeled` run gets a group of its own: it must never queue behind, or replace, the item's pending run (ADR-0045).
 concurrency:
   group: ai-workflows-e2e-${{ github.event.action == 'labeled' && format('labeled-{0}', github.run_id) || format('{0}{1}', github.event_name == 'pull_request_target' && 'fork-push-' || '', github.event.pull_request.number || github.event.issue.number || github.run_id) }}
   cancel-in-progress: false
@@ -31,9 +31,8 @@ permissions: {}
 jobs:
   # The routing gate, checked on every event (issues, issue_comment, pull_request). Every other job needs config.
   # TWIN: the normal caller's `config` job (ai-workflows.yml) has the exact negation of this `if:`; change both together.
-  # `labeled` events (not in the normal caller yet) run the `off` job only, never config (ADR-0045).
   config:
-    if: ${{ github.event.action != 'labeled' && ((startsWith(github.head_ref, 'e2e/') && github.event.pull_request.head.repo.full_name == github.repository) || contains(github.event.pull_request.labels.*.name, 'e2e-target') || contains(github.event.issue.labels.*.name, 'e2e-target')) }}
+    if: ${{ (startsWith(github.head_ref, 'e2e/') && github.event.pull_request.head.repo.full_name == github.repository) || contains(github.event.pull_request.labels.*.name, 'e2e-target') || contains(github.event.issue.labels.*.name, 'e2e-target') }}
     uses: esciara/ai-workflows/.github/workflows/config.yml@e2e-target
     permissions:
       contents: read
@@ -64,7 +63,7 @@ jobs:
   # Workflow A (WP2+). review.yml is a placeholder on ai-workflows main until WP2 lands.
   review:
     needs: config
-    if: needs.config.outputs.review == 'true' && (github.event_name == 'pull_request' || (github.event_name == 'issue_comment' && github.event.issue.pull_request))
+    if: needs.config.outputs.review == 'true' && github.event.action != 'labeled' && (github.event_name == 'pull_request' || (github.event_name == 'issue_comment' && github.event.issue.pull_request))
     uses: esciara/ai-workflows/.github/workflows/review.yml@e2e-target
     permissions:
       contents: read
@@ -87,7 +86,7 @@ jobs:
   # Workflow B (WP5+). triage.yml is a placeholder on ai-workflows main until WP5 lands.
   triage:
     needs: config
-    if: needs.config.outputs.triage == 'true' && (github.event_name == 'issues' || (github.event_name == 'issue_comment' && !github.event.issue.pull_request))
+    if: needs.config.outputs.triage == 'true' && github.event.action != 'labeled' && (github.event_name == 'issues' || (github.event_name == 'issue_comment' && !github.event.issue.pull_request))
     uses: esciara/ai-workflows/.github/workflows/triage.yml@e2e-target
     permissions:
       contents: write
