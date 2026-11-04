@@ -5,8 +5,9 @@
 # - issues and issue_comment events (comments on PRs too): labelled `e2e-target`. A comment payload has no head ref
 #   (github.head_ref is empty), so a PR's comments route by label; the e2e helpers label every test PR after creation.
 # A test holds the e2e slot (ADR-0026), pushes its WP branch to `e2e-target`, then opens e2e items; the normal
-# caller (ai-workflows.yml) skips exactly those. Config comes from tests/e2e/config/playground.yml at that commit, not from
-# .github/ai-workflows.yml here, so a WP changes its e2e config on its own branch. Mirrors ai-workflows.yml otherwise.
+# caller (ai-workflows.yml) skips exactly those. Config comes from .github/ai-workflows-e2e.yml here (ordinary
+# `config_path` input), not .github/ai-workflows.yml. Items labelled `e2e-crash` get an invalid model token, so their
+# first agent job fails (WP12a's forced crash; the product has no test hook, ADR-0050). Mirrors ai-workflows.yml otherwise.
 # Own-workflow refs are branches on purpose (ADR-0022); pinning comes with WP14.
 name: AI workflows (e2e)
 on:
@@ -36,7 +37,7 @@ jobs:
     permissions:
       contents: read
     with:
-      e2e_config: playground.yml
+      config_path: .github/ai-workflows-e2e.yml
 
   commands:
     needs: config
@@ -49,7 +50,7 @@ jobs:
     with:
       config: ${{ needs.config.outputs.config }}
     secrets:
-      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ (contains(github.event.issue.labels.*.name, 'e2e-crash') || contains(github.event.pull_request.labels.*.name, 'e2e-crash')) && 'e2e-crash-invalid-token' || secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 
   # Workflow A (WP2+). review.yml is a placeholder on ai-workflows main until WP2 lands.
   review:
@@ -64,7 +65,7 @@ jobs:
     with:
       config: ${{ needs.config.outputs.config }}
     secrets:
-      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ (contains(github.event.issue.labels.*.name, 'e2e-crash') || contains(github.event.pull_request.labels.*.name, 'e2e-crash')) && 'e2e-crash-invalid-token' || secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 
   # Workflow A, fork PRs (ADR-0044): a fork push after a review removes the verdict label. No secrets, no checkout.
   review-fork-push:
@@ -86,7 +87,7 @@ jobs:
     with:
       config: ${{ needs.config.outputs.config }}
     secrets:
-      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ (contains(github.event.issue.labels.*.name, 'e2e-crash') || contains(github.event.pull_request.labels.*.name, 'e2e-crash')) && 'e2e-crash-invalid-token' || secrets.CLAUDE_CODE_OAUTH_TOKEN }}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
