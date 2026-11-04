@@ -1,0 +1,11 @@
+# Config for the e2e caller (caller-e2e.yml passes `config_path: .github/ai-workflows-e2e.yml`); normal runs read
+# .github/ai-workflows.yml. Moved here from esciara/ai-workflows tests/e2e/config/playground.yml (ADR-0050).
+maintainers: [esciara]
+default_branch: main
+setup: pip install -e '.[test]'
+test: pytest
+risk_paths:
+  high: [".github/**"]
+workflows:
+  review: true
+  triage: true
