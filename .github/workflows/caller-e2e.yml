@@ -39,19 +39,6 @@ jobs:
     with:
       config_path: .github/ai-workflows-e2e.yml
 
-  commands:
-    needs: config
-    if: needs.config.outputs.enabled == 'true' && github.event_name == 'issue_comment'
-    uses: esciara/ai-workflows/.github/workflows/commands.yml@e2e-target
-    permissions:
-      contents: read
-      issues: write
-      pull-requests: write
-    with:
-      config: ${{ needs.config.outputs.config }}
-    secrets:
-      CLAUDE_CODE_OAUTH_TOKEN: ${{ (contains(github.event.issue.labels.*.name, 'e2e-crash') || contains(github.event.pull_request.labels.*.name, 'e2e-crash')) && 'e2e-crash-invalid-token' || secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-
   # Workflow A (WP2+). review.yml is a placeholder on ai-workflows main until WP2 lands.
   review:
     needs: config
