@@ -36,12 +36,11 @@ concurrency:
 permissions: {}
 
 jobs:
-  # e2e routing (ADR-0028): items that caller-e2e.yml handles are skipped here; every other job needs config.
+  # e2e routing (ADR-0028, ADR-0056): items that caller-e2e-1.yml, -2, -3 handle are skipped here; every other job needs config.
   # config also parses a comment's slash command once (ADR-0005); there is no `commands` job any more.
-  # TWIN: this `if:` negates the `config` `if:`s of caller-e2e.yml and caller-e2e-1.yml, -2, -3 together
-  # (ADR-0056 transition; PR-B drops caller-e2e.yml and this gate becomes the negation of the three slots).
+  # TWIN: this `if:` is the exact negation of the `config` `if:`s of caller-e2e-1.yml, -2, -3 together.
   config:
-    if: ${{ !(((startsWith(github.head_ref, 'e2e/') && github.event.pull_request.head.repo.full_name == github.repository) || contains(github.event.pull_request.labels.*.name, 'e2e-target') || contains(github.event.issue.labels.*.name, 'e2e-target')) || ((startsWith(github.head_ref, 'e2e/1/') && github.event.pull_request.head.repo.full_name == github.repository) || contains(github.event.pull_request.labels.*.name, 'e2e-target-1') || contains(github.event.issue.labels.*.name, 'e2e-target-1')) || ((startsWith(github.head_ref, 'e2e/2/') && github.event.pull_request.head.repo.full_name == github.repository) || contains(github.event.pull_request.labels.*.name, 'e2e-target-2') || contains(github.event.issue.labels.*.name, 'e2e-target-2')) || ((startsWith(github.head_ref, 'e2e/3/') && github.event.pull_request.head.repo.full_name == github.repository) || contains(github.event.pull_request.labels.*.name, 'e2e-target-3') || contains(github.event.issue.labels.*.name, 'e2e-target-3'))) }}
+    if: ${{ !(((startsWith(github.head_ref, 'e2e/1/') && github.event.pull_request.head.repo.full_name == github.repository) || contains(github.event.pull_request.labels.*.name, 'e2e-target-1') || contains(github.event.issue.labels.*.name, 'e2e-target-1')) || ((startsWith(github.head_ref, 'e2e/2/') && github.event.pull_request.head.repo.full_name == github.repository) || contains(github.event.pull_request.labels.*.name, 'e2e-target-2') || contains(github.event.issue.labels.*.name, 'e2e-target-2')) || ((startsWith(github.head_ref, 'e2e/3/') && github.event.pull_request.head.repo.full_name == github.repository) || contains(github.event.pull_request.labels.*.name, 'e2e-target-3') || contains(github.event.issue.labels.*.name, 'e2e-target-3'))) }}
     uses: esciara/ai-workflows/.github/workflows/config.yml@971b60126a957026a2e939ee1c527fdac7d340af # v0.1.0
     permissions:
       contents: read
