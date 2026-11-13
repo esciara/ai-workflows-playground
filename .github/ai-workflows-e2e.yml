@@ -1,4 +1,4 @@
-# Config for the e2e caller (caller-e2e.yml passes `config_path: .github/ai-workflows-e2e.yml`); normal runs read
+# Config for the e2e slot callers (caller-e2e-<n>.yml pass `config_path: .github/ai-workflows-e2e.yml`); normal runs read
 # .github/ai-workflows.yml. Moved here from esciara/ai-workflows tests/e2e/config/playground.yml (ADR-0050).
 maintainers: [esciara]
 default_branch: main
