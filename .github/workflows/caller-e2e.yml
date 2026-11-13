@@ -34,9 +34,10 @@ permissions: {}
 
 jobs:
   # The routing gate, checked on every event (issues, issue_comment, pull_request). Every other job needs config.
-  # TWIN: the normal caller's `config` job (ai-workflows.yml) has the exact negation of this `if:`; change both together.
+  # Transition (ADR-0056, until this file is deleted): items routed to a slot caller (caller-e2e-<n>.yml) are
+  # excluded here. TWIN: the normal caller's `if:` negates this one and the three slot `if:`s together.
   config:
-    if: ${{ (startsWith(github.head_ref, 'e2e/') && github.event.pull_request.head.repo.full_name == github.repository) || contains(github.event.pull_request.labels.*.name, 'e2e-target') || contains(github.event.issue.labels.*.name, 'e2e-target') }}
+    if: ${{ ((startsWith(github.head_ref, 'e2e/') && github.event.pull_request.head.repo.full_name == github.repository) || contains(github.event.pull_request.labels.*.name, 'e2e-target') || contains(github.event.issue.labels.*.name, 'e2e-target')) && !(((startsWith(github.head_ref, 'e2e/1/') && github.event.pull_request.head.repo.full_name == github.repository) || contains(github.event.pull_request.labels.*.name, 'e2e-target-1') || contains(github.event.issue.labels.*.name, 'e2e-target-1')) || ((startsWith(github.head_ref, 'e2e/2/') && github.event.pull_request.head.repo.full_name == github.repository) || contains(github.event.pull_request.labels.*.name, 'e2e-target-2') || contains(github.event.issue.labels.*.name, 'e2e-target-2')) || ((startsWith(github.head_ref, 'e2e/3/') && github.event.pull_request.head.repo.full_name == github.repository) || contains(github.event.pull_request.labels.*.name, 'e2e-target-3') || contains(github.event.issue.labels.*.name, 'e2e-target-3'))) }}
     uses: esciara/ai-workflows/.github/workflows/config.yml@e2e-target
     permissions:
       contents: read
