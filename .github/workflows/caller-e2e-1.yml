@@ -37,8 +37,7 @@ permissions: {}
 
 jobs:
   # The routing gate, checked on every event (issues, issue_comment, pull_request). Every other job needs config.
-  # TWIN: the normal caller's `config` job (ai-workflows.yml) negates the old single-slot gate and the three slot
-  # gates; caller-e2e.yml has the old gate minus the slot gates (ADR-0056 transition, until PR-B). Change all together.
+  # TWIN: one of the routing gates listed at the `config` job of ai-workflows.yml; change them together.
   config:
     if: ${{ (startsWith(github.head_ref, 'e2e/1/') && github.event.pull_request.head.repo.full_name == github.repository) || contains(github.event.pull_request.labels.*.name, 'e2e-target-1') || contains(github.event.issue.labels.*.name, 'e2e-target-1') }}
     uses: esciara/ai-workflows/.github/workflows/config.yml@e2e-target-1
