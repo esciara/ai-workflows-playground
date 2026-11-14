@@ -17,3 +17,6 @@ notify: slack,telegram
 limits:
   triage_per_author_per_day: 50
   triage_per_day: 200
+# WP7 reporter silence in minutes (decimal days): ping ~10, stale ~15, close ~16 minutes after B2 asks. actions/stale
+# rounds close - stale down to 0 days, so it closes in the run that labels `stale` (spec: Reporter silence).
+reporter_silence_days: {ping: 0.007, stale: 0.0105, close: 0.011}
