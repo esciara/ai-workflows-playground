@@ -1,0 +1,24 @@
+# WP9 e2e only (esciara/ai-workflows tests/e2e/test_wp9.py): the slot callers load this config instead of
+# ai-workflows-e2e.yml for issues labelled `e2e-fix-fail`. Same as ai-workflows-e2e.yml except `test`, which always
+# fails, and `limits.fix_rounds: 1`, so B5's own check rejects the one round and the loop escalates, deterministically.
+maintainers: [esciara]
+default_branch: main
+setup: python3 -m venv .venv && .venv/bin/pip install -e '.[test]'
+test: echo 'forced failure (e2e)'; exit 1
+# Sandbox egress for setup/test (ADR-0037): the package registries only.
+allowed_domains: [pypi.org, files.pythonhosted.org]
+risk_paths:
+  high: [".github/**"]
+workflows:
+  review: true
+  triage: true
+# Chat alerts (e.g. "new issue triaged") go to Slack and Telegram; the e2e slot callers pass the chat secrets.
+notify: slack,telegram
+# ADR-0058: e2e issues come from the outside tester and count toward the triage caps; raised so parallel e2e runs aren't capped.
+limits:
+  fix_rounds: 1
+  triage_per_author_per_day: 50
+  triage_per_day: 200
+# WP7 reporter silence in minutes (decimal days): ping ~10, stale ~15, close ~16 minutes after B2 asks. actions/stale
+# rounds close - stale down to 0 days, so it closes in the run that labels `stale` (spec: Reporter silence).
+reporter_silence_days: {ping: 0.007, stale: 0.0105, close: 0.011}
