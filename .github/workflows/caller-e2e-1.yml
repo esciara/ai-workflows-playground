@@ -10,7 +10,8 @@
 # slot number (drift test: tests/e2e/test_callers_match.py in esciara/ai-workflows). Config comes from
 # .github/ai-workflows-e2e.yml here (ordinary `config_path` input), not .github/ai-workflows.yml. Items labelled
 # `e2e-crash` get an invalid model token, so their first agent job fails (WP12a's forced crash; the product has no
-# test hook, ADR-0050). Mirrors ai-workflows.yml otherwise.
+# test hook, ADR-0050). Issues labelled `e2e-fix-fail` load .github/ai-workflows-e2e-fix-fail.yml instead (WP9's forced
+# fix failure: a `test` command that always fails, one round). Mirrors ai-workflows.yml otherwise.
 # Own-workflow refs are branches on purpose: the slot ref is the commit under test.
 name: AI workflows (e2e 1)
 on:
@@ -52,7 +53,7 @@ jobs:
     permissions:
       contents: read
     with:
-      config_path: .github/ai-workflows-e2e.yml
+      config_path: ${{ contains(github.event.issue.labels.*.name, 'e2e-fix-fail') && '.github/ai-workflows-e2e-fix-fail.yml' || '.github/ai-workflows-e2e.yml' }}
 
   # Workflow A (WP2+). review.yml is a placeholder on ai-workflows main until WP2 lands.
   review:
