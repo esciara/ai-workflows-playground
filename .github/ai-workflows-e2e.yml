@@ -2,8 +2,10 @@
 # .github/ai-workflows.yml. Moved here from esciara/ai-workflows tests/e2e/config/playground.yml (ADR-0050).
 maintainers: [esciara]
 default_branch: main
-setup: pip install -e '.[test]'
-test: pytest
+setup: python3 -m venv .venv && .venv/bin/pip install -e '.[test]'
+test: .venv/bin/pytest
+# Sandbox egress for setup/test (ADR-0037): the package registries only.
+allowed_domains: [pypi.org, files.pythonhosted.org]
 risk_paths:
   high: [".github/**"]
 workflows:
