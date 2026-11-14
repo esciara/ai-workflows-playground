@@ -1,0 +1,61 @@
+# Throwaway probe (WP18): which GITHUB_TOKEN permissions let a job resolve a review thread. Delete with the branch.
+name: probe resolve thread
+on:
+  pull_request:
+    types: [synchronize]
+permissions: {}
+jobs:
+  a:
+    runs-on: ubuntu-latest
+    permissions: {pull-requests: write}
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          TAG: probe-${{ github.job }}
+        run: |
+          q='query($o:String!,$n:String!,$p:Int!){repository(owner:$o,name:$n){pullRequest(number:$p){reviewThreads(first:50){nodes{id isResolved comments(first:1){nodes{databaseId body}}}}}}}'
+          found=$(gh api graphql -f query="$q" -f o="${REPO%/*}" -f n="${REPO#*/}" -F p="$PR" \
+            --jq ".data.repository.pullRequest.reviewThreads.nodes[] | select(.comments.nodes[0].body | contains(\"$TAG \")) | \"\(.id) \(.comments.nodes[0].databaseId)\"" 2>&1) || { echo "LOOKUP $TAG: FAIL $found"; exit 1; }
+          read -r tid cid <<<"$found"
+          echo "thread $tid first comment $cid"
+          if out=$(gh api -X POST "repos/$REPO/pulls/$PR/comments/$cid/replies" -f body="resolved in probe: $TAG" 2>&1 >/dev/null); then echo "REPLY $TAG: ok"; else echo "REPLY $TAG: FAIL $out"; fi
+          m='mutation($id:ID!){resolveReviewThread(input:{threadId:$id}){thread{isResolved}}}'
+          if out=$(gh api graphql -f query="$m" -f id="$tid" 2>&1); then echo "RESOLVE $TAG: ok $out"; else echo "RESOLVE $TAG: FAIL $out"; fi
+  b:
+    runs-on: ubuntu-latest
+    permissions: {pull-requests: write, contents: write}
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          TAG: probe-${{ github.job }}
+        run: |
+          q='query($o:String!,$n:String!,$p:Int!){repository(owner:$o,name:$n){pullRequest(number:$p){reviewThreads(first:50){nodes{id isResolved comments(first:1){nodes{databaseId body}}}}}}}'
+          found=$(gh api graphql -f query="$q" -f o="${REPO%/*}" -f n="${REPO#*/}" -F p="$PR" \
+            --jq ".data.repository.pullRequest.reviewThreads.nodes[] | select(.comments.nodes[0].body | contains(\"$TAG \")) | \"\(.id) \(.comments.nodes[0].databaseId)\"" 2>&1) || { echo "LOOKUP $TAG: FAIL $found"; exit 1; }
+          read -r tid cid <<<"$found"
+          echo "thread $tid first comment $cid"
+          if out=$(gh api -X POST "repos/$REPO/pulls/$PR/comments/$cid/replies" -f body="resolved in probe: $TAG" 2>&1 >/dev/null); then echo "REPLY $TAG: ok"; else echo "REPLY $TAG: FAIL $out"; fi
+          m='mutation($id:ID!){resolveReviewThread(input:{threadId:$id}){thread{isResolved}}}'
+          if out=$(gh api graphql -f query="$m" -f id="$tid" 2>&1); then echo "RESOLVE $TAG: ok $out"; else echo "RESOLVE $TAG: FAIL $out"; fi
+  c:
+    runs-on: ubuntu-latest
+    permissions: {pull-requests: write, issues: write}
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          TAG: probe-${{ github.job }}
+        run: |
+          q='query($o:String!,$n:String!,$p:Int!){repository(owner:$o,name:$n){pullRequest(number:$p){reviewThreads(first:50){nodes{id isResolved comments(first:1){nodes{databaseId body}}}}}}}'
+          found=$(gh api graphql -f query="$q" -f o="${REPO%/*}" -f n="${REPO#*/}" -F p="$PR" \
+            --jq ".data.repository.pullRequest.reviewThreads.nodes[] | select(.comments.nodes[0].body | contains(\"$TAG \")) | \"\(.id) \(.comments.nodes[0].databaseId)\"" 2>&1) || { echo "LOOKUP $TAG: FAIL $found"; exit 1; }
+          read -r tid cid <<<"$found"
+          echo "thread $tid first comment $cid"
+          if out=$(gh api -X POST "repos/$REPO/pulls/$PR/comments/$cid/replies" -f body="resolved in probe: $TAG" 2>&1 >/dev/null); then echo "REPLY $TAG: ok"; else echo "REPLY $TAG: FAIL $out"; fi
+          m='mutation($id:ID!){resolveReviewThread(input:{threadId:$id}){thread{isResolved}}}'
+          if out=$(gh api graphql -f query="$m" -f id="$tid" 2>&1); then echo "RESOLVE $TAG: ok $out"; else echo "RESOLVE $TAG: FAIL $out"; fi
