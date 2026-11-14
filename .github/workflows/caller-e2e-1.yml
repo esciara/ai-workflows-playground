@@ -23,6 +23,14 @@ on:
     types: [created]
   issues:
     types: [opened]
+  # Reporter silence (WP7): a manual run stands in for the daily schedule, scoped to this slot's issues plus the
+  # issues carrying every label in `labels` (each e2e test passes its own, so tests never touch each other's issues).
+  workflow_dispatch:
+    inputs:
+      labels:
+        description: Extra labels an issue must carry to be handled (comma-separated), besides e2e-target-1
+        type: string
+        default: ''
 
 # One group per item for pushes and commands: a new push waits for the running review, never runs beside it. A group keeps
 # only one pending run, so a comment that cannot be a command gets its own group (the run_id): it never replaces a
@@ -86,3 +94,23 @@ jobs:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+  # Reporter silence (WP7, spec: Reporter silence) on a manual run only. The routing gate above never matches a
+  # workflow_dispatch (no item), so this run loads the e2e config through its own config job.
+  config-silence:
+    if: github.event_name == 'workflow_dispatch'
+    uses: esciara/ai-workflows/.github/workflows/config.yml@e2e-target-1
+    permissions:
+      contents: read
+    with:
+      config_path: .github/ai-workflows-e2e.yml
+
+  silence:
+    needs: config-silence
+    if: needs.config-silence.outputs.triage == 'true'
+    uses: esciara/ai-workflows/.github/workflows/silence.yml@e2e-target-1
+    permissions:
+      issues: write
+    with:
+      config: ${{ needs.config-silence.outputs.config }}
+      labels: e2e-target-1,${{ inputs.labels }}
