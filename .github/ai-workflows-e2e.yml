@@ -9,4 +9,5 @@ risk_paths:
 workflows:
   review: true
   triage: true
-notify: slack,telegram           # WP11b: chat alerts from the e2e slot callers (they pass the chat secrets)
+# Chat alerts (e.g. "new issue triaged") go to Slack and Telegram; the e2e slot callers pass the chat secrets.
+notify: slack,telegram
