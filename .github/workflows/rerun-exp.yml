@@ -1,0 +1,41 @@
+# test-fixture (aiwf-qhk experiment, delete after): can GITHUB_TOKEN with actions: write rerun a failed job of an
+# earlier run of this workflow on the same head SHA, from a pull_request_review or workflow_dispatch event?
+name: rerun-exp
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  pull_request_review:
+    types: [submitted, dismissed]
+  workflow_dispatch: {}
+permissions: {}
+jobs:
+  verdict:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
+          ATTEMPT: ${{ github.run_attempt }}
+          RUN_ID: ${{ github.run_id }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          STATE: ${{ github.event.review.state }}
+        run: |
+          echo "event=$EVENT attempt=$ATTEMPT head=$HEAD_SHA state=$STATE run=$RUN_ID"
+          if [ "$EVENT" = pull_request ]; then
+            if [ "$ATTEMPT" = 1 ]; then echo "::error::first attempt fails on purpose"; exit 1; fi
+            echo "attempt $ATTEMPT passes"; exit 0
+          fi
+          wf=$(gh api "repos/$REPO/actions/runs/$RUN_ID" --jq .workflow_id)
+          gh api "repos/$REPO/actions/workflows/$wf/runs?head_sha=$HEAD_SHA&per_page=100" \
+            --jq '.workflow_runs[] | "\(.id) \(.event) \(.status) \(.conclusion)"'
+          for id in $(gh api "repos/$REPO/actions/workflows/$wf/runs?head_sha=$HEAD_SHA&status=completed&per_page=100" \
+              --jq '.workflow_runs[] | select((.id|tostring) != $ENV.RUN_ID) | .id'); do
+            for job in $(gh api "repos/$REPO/actions/runs/$id/jobs" --jq '.jobs[] | select(.name == "verdict" and .conclusion == "failure") | .id'); do
+              echo "rerun job $job of run $id"
+              gh api -X POST "repos/$REPO/actions/jobs/$job/rerun" && echo "rerun accepted" || echo "::warning::rerun refused"
+            done
+          done
