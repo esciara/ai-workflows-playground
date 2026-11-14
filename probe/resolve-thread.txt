@@ -1,0 +1,4 @@
+probe file
+line a
+line b
+line c
