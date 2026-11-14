@@ -11,3 +11,7 @@ workflows:
   triage: true
 # Chat alerts (e.g. "new issue triaged") go to Slack and Telegram; the e2e slot callers pass the chat secrets.
 notify: slack,telegram
+# ADR-0058: e2e issues come from the outside tester and count toward the triage caps; raised so parallel e2e runs aren't capped.
+limits:
+  triage_per_author_per_day: 50
+  triage_per_day: 200
