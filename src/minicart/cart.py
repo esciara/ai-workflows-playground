@@ -77,5 +77,5 @@ class Cart:
         """Take `percent` % off the subtotal when the cart holds at least `min_items` items; return the discount."""
         if self.item_count() < min_items:
             return Decimal("0")
-        self.discount = round_money(self.subtotal() * to_decimal(percent))
+        self.discount = round_money(self.subtotal() * to_decimal(percent) / 100)
         return self.discount
