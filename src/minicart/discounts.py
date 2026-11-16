@@ -28,5 +28,5 @@ def apply_coupon(cart: Cart, code: str) -> Decimal:
         discount = round_money(subtotal * value / 100)
     else:
         discount = min(value, subtotal)
-    cart.discount = discount
+    cart.coupon = (kind, value, minimum)
     return discount
