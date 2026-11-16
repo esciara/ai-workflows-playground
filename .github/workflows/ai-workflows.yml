@@ -41,7 +41,7 @@ jobs:
   # TWIN: this `if:` is the exact negation of the `config` `if:`s of caller-e2e-1.yml, -2, -3 together.
   config:
     if: ${{ !(((startsWith(github.head_ref, 'e2e/1/') && github.event.pull_request.head.repo.full_name == github.repository) || contains(github.event.pull_request.labels.*.name, 'e2e-target-1') || contains(github.event.issue.labels.*.name, 'e2e-target-1')) || ((startsWith(github.head_ref, 'e2e/2/') && github.event.pull_request.head.repo.full_name == github.repository) || contains(github.event.pull_request.labels.*.name, 'e2e-target-2') || contains(github.event.issue.labels.*.name, 'e2e-target-2')) || ((startsWith(github.head_ref, 'e2e/3/') && github.event.pull_request.head.repo.full_name == github.repository) || contains(github.event.pull_request.labels.*.name, 'e2e-target-3') || contains(github.event.issue.labels.*.name, 'e2e-target-3'))) }}
-    uses: esciara/ai-workflows/.github/workflows/config.yml@c945128a67dd125e57c9f70f446175024835121d # v0.3.0
+    uses: esciara/ai-workflows/.github/workflows/config.yml@c090c11ca826f9ab2d56cc1d72fd4541e2420af5 # v0.3.1
     permissions:
       contents: read
     with:
@@ -51,7 +51,7 @@ jobs:
   labels:
     needs: config
     if: needs.config.outputs.enabled == 'true' && (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule')
-    uses: esciara/ai-workflows/.github/workflows/labels.yml@c945128a67dd125e57c9f70f446175024835121d # v0.3.0
+    uses: esciara/ai-workflows/.github/workflows/labels.yml@c090c11ca826f9ab2d56cc1d72fd4541e2420af5 # v0.3.1
     permissions:
       issues: write
 
@@ -59,7 +59,7 @@ jobs:
   review:
     needs: config
     if: needs.config.outputs.review == 'true' && (github.event_name == 'pull_request' || (github.event_name == 'issue_comment' && github.event.issue.pull_request))
-    uses: esciara/ai-workflows/.github/workflows/review.yml@c945128a67dd125e57c9f70f446175024835121d # v0.3.0
+    uses: esciara/ai-workflows/.github/workflows/review.yml@c090c11ca826f9ab2d56cc1d72fd4541e2420af5 # v0.3.1
     permissions:
       contents: write  # the publish job resolves A's fixed threads (ADR-0057); the agents get none of it
       pull-requests: write
@@ -75,7 +75,7 @@ jobs:
   review-fork-push:
     needs: config
     if: needs.config.outputs.review == 'true' && github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository
-    uses: esciara/ai-workflows/.github/workflows/review-fork-push.yml@c945128a67dd125e57c9f70f446175024835121d # v0.3.0
+    uses: esciara/ai-workflows/.github/workflows/review-fork-push.yml@c090c11ca826f9ab2d56cc1d72fd4541e2420af5 # v0.3.1
     permissions:
       pull-requests: write
 
@@ -83,7 +83,7 @@ jobs:
   triage:
     needs: config
     if: needs.config.outputs.triage == 'true' && (github.event_name == 'issues' || (github.event_name == 'issue_comment' && !github.event.issue.pull_request))
-    uses: esciara/ai-workflows/.github/workflows/triage.yml@c945128a67dd125e57c9f70f446175024835121d # v0.3.0
+    uses: esciara/ai-workflows/.github/workflows/triage.yml@c090c11ca826f9ab2d56cc1d72fd4541e2420af5 # v0.3.1
     # Grants the most triage.yml needs (contents: write for the fix push job); the called jobs narrow it.
     permissions:
       contents: write
@@ -103,7 +103,7 @@ jobs:
   silence:
     needs: config
     if: needs.config.outputs.triage == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
-    uses: esciara/ai-workflows/.github/workflows/silence.yml@c945128a67dd125e57c9f70f446175024835121d # v0.3.0
+    uses: esciara/ai-workflows/.github/workflows/silence.yml@c090c11ca826f9ab2d56cc1d72fd4541e2420af5 # v0.3.1
     permissions:
       issues: write
     with:
@@ -114,7 +114,7 @@ jobs:
   notify:
     needs: config
     if: needs.config.outputs.enabled == 'true' && github.event_name == 'workflow_dispatch' && fromJSON(needs.config.outputs.config).notify != 'none'
-    uses: esciara/ai-workflows/.github/workflows/notify.yml@c945128a67dd125e57c9f70f446175024835121d # v0.3.0
+    uses: esciara/ai-workflows/.github/workflows/notify.yml@c090c11ca826f9ab2d56cc1d72fd4541e2420af5 # v0.3.1
     permissions: {}
     with:
       channels: ${{ fromJSON(needs.config.outputs.config).notify }}
