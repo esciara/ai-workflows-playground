@@ -20,13 +20,19 @@ def apply_coupon(cart: Cart, code: str) -> Decimal:
     key = code.strip().upper()
     if key not in COUPONS:
         raise CouponError(f"unknown coupon: {code}")
-    kind, value, minimum = COUPONS[key]
     subtotal = cart.subtotal()
+    minimum = COUPONS[key][2]
     if subtotal < minimum:
         raise CouponError(f"{key} needs a subtotal of at least {minimum}")
+    cart.coupon = key
+    return coupon_discount(key, subtotal)
+
+
+def coupon_discount(key: str, subtotal: Decimal) -> Decimal:
+    """Discount of coupon `key` for `subtotal`; zero if below the coupon minimum."""
+    kind, value, minimum = COUPONS[key]
+    if subtotal < minimum:
+        return Decimal("0")
     if kind == "percent":
-        discount = round_money(subtotal * value / 100)
-    else:
-        discount = min(value, subtotal)
-    cart.discount = discount
-    return discount
+        return round_money(subtotal * value / 100)
+    return min(value, subtotal)
