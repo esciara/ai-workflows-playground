@@ -1,11 +1,14 @@
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
 
 def to_decimal(value: Decimal | int | float | str) -> Decimal:
     """Convert a number to Decimal without float artefacts."""
     if isinstance(value, Decimal):
         return value
-    return Decimal(str(value))
+    try:
+        return Decimal(str(value))
+    except InvalidOperation as exc:
+        raise ValueError(f"invalid number: {value!r}") from exc
 
 
 def round_money(value: Decimal | int | float | str) -> Decimal:

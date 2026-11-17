@@ -15,3 +15,11 @@ def test_round_money(raw, expected):
 
 def test_to_decimal_avoids_float_artefacts():
     assert to_decimal(0.1) == Decimal("0.1")
+
+
+def test_to_decimal_invalid_string_raises_value_error():
+    import pytest
+    from minicart.money import to_decimal
+
+    with pytest.raises(ValueError):
+        to_decimal("abc")
