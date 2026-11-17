@@ -22,7 +22,25 @@ class Cart:
             raise ValueError("tax_rate must be between 0 and 1")
         self.tax_rate = rate
         self._items: dict[str, LineItem] = {}
-        self.discount = Decimal("0")
+        self.coupon: tuple[str, Decimal, Decimal] | None = None
+        self._discount = Decimal("0")
+
+    @property
+    def discount(self) -> Decimal:
+        if self.coupon is None:
+            return self._discount
+        kind, value, minimum = self.coupon
+        subtotal = self.subtotal()
+        if subtotal < minimum:
+            return Decimal("0")
+        if kind == "percent":
+            return round_money(subtotal * value / 100)
+        return min(value, subtotal)
+
+    @discount.setter
+    def discount(self, value: Decimal) -> None:
+        self.coupon = None
+        self._discount = value
 
     def add(self, sku: str, unit_price: Decimal | str, quantity: int = 1) -> None:
         if not sku:

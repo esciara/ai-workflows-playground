@@ -50,3 +50,11 @@ def test_new_coupon_replaces_previous_one():
     apply_coupon(cart, "HALF")
     apply_coupon(cart, "SAVE10")
     assert cart.discount == Decimal("10.00")
+
+
+def test_percent_coupon_recomputed_after_add():
+    cart = Cart()
+    cart.add("A", "100.00")
+    apply_coupon(cart, "SAVE10")
+    cart.add("B", "100.00")
+    assert cart.total() == Decimal("180.00")

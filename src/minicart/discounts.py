@@ -1,7 +1,6 @@
 from decimal import Decimal
 
 from minicart.cart import Cart
-from minicart.money import round_money
 
 # code -> (kind, value, minimum subtotal)
 COUPONS: dict[str, tuple[str, Decimal, Decimal]] = {
@@ -24,9 +23,5 @@ def apply_coupon(cart: Cart, code: str) -> Decimal:
     subtotal = cart.subtotal()
     if subtotal < minimum:
         raise CouponError(f"{key} needs a subtotal of at least {minimum}")
-    if kind == "percent":
-        discount = round_money(subtotal * value / 100)
-    else:
-        discount = min(value, subtotal)
-    cart.discount = discount
-    return discount
+    cart.coupon = (kind, value, minimum)
+    return cart.discount
