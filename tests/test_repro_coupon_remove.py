@@ -1,0 +1,13 @@
+from decimal import Decimal
+
+from minicart.cart import Cart
+from minicart.discounts import apply_coupon
+
+
+def test_coupon_dropped_when_subtotal_below_minimum_after_remove():
+    cart = Cart()
+    cart.add("A", "15.00")
+    cart.add("B", "10.00")
+    apply_coupon(cart, "FIVEOFF")
+    cart.remove("B")
+    assert cart.total() == Decimal("15.00")
