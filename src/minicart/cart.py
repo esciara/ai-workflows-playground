@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from decimal import Decimal
 
+from minicart.coupons import compute_discount
 from minicart.money import round_money, to_decimal
 
 
@@ -23,6 +24,17 @@ class Cart:
         self.tax_rate = rate
         self._items: dict[str, LineItem] = {}
         self.discount = Decimal("0")
+        self.coupon: str | None = None
+
+    def _revalidate(self) -> None:
+        """Recompute the coupon discount after the items changed."""
+        if self.coupon is None:
+            return
+        discount = compute_discount(self.coupon, self.subtotal())
+        if discount is None:
+            self.coupon = None
+            discount = Decimal("0")
+        self.discount = discount
 
     def add(self, sku: str, unit_price: Decimal | str, quantity: int = 1) -> None:
         if not sku:
@@ -39,6 +51,7 @@ class Cart:
             item.quantity += quantity
         else:
             self._items[sku] = LineItem(sku, price, quantity)
+        self._revalidate()
 
     def remove(self, sku: str, quantity: int | None = None) -> None:
         if sku not in self._items:
@@ -50,6 +63,7 @@ class Cart:
             raise ValueError("quantity must be positive")
         else:
             item.quantity -= quantity
+        self._revalidate()
 
     @property
     def items(self) -> list[LineItem]:
@@ -71,4 +85,5 @@ class Cart:
 
     def clear(self) -> None:
         self._items.clear()
+        self.coupon = None
         self.discount = Decimal("0")
