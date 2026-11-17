@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from dataclasses import dataclass
 from decimal import Decimal
 
@@ -23,6 +24,14 @@ class Cart:
         self.tax_rate = rate
         self._items: dict[str, LineItem] = {}
         self.discount = Decimal("0")
+        # Set by apply_coupon: recomputes the discount from the current cart.
+        self.discount_rule: Callable[["Cart"], Decimal] | None = None
+
+    def _refresh_discount(self) -> None:
+        if self.discount_rule is not None:
+            self.discount = self.discount_rule(self)
+            if self.discount == 0:
+                self.discount_rule = None
 
     def add(self, sku: str, unit_price: Decimal | str, quantity: int = 1) -> None:
         if not sku:
@@ -39,6 +48,7 @@ class Cart:
             item.quantity += quantity
         else:
             self._items[sku] = LineItem(sku, price, quantity)
+        self._refresh_discount()
 
     def remove(self, sku: str, quantity: int | None = None) -> None:
         if sku not in self._items:
@@ -50,6 +60,7 @@ class Cart:
             raise ValueError("quantity must be positive")
         else:
             item.quantity -= quantity
+        self._refresh_discount()
 
     @property
     def items(self) -> list[LineItem]:
@@ -72,3 +83,4 @@ class Cart:
     def clear(self) -> None:
         self._items.clear()
         self.discount = Decimal("0")
+        self.discount_rule = None
