@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from minicart.money import round_money, to_decimal
 
@@ -17,8 +17,11 @@ class LineItem:
 
 class Cart:
     def __init__(self, tax_rate: Decimal | str = "0") -> None:
-        rate = to_decimal(tax_rate)
-        if rate < 0 or rate > 1:
+        try:
+            rate = to_decimal(tax_rate)
+        except InvalidOperation as exc:
+            raise ValueError("tax_rate must be between 0 and 1") from exc
+        if not rate.is_finite() or rate < 0 or rate > 1:
             raise ValueError("tax_rate must be between 0 and 1")
         self.tax_rate = rate
         self._items: dict[str, LineItem] = {}
