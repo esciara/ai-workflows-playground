@@ -19,3 +19,7 @@ def test_to_decimal_avoids_float_artefacts():
 
 def test_format_money_positive():
     assert format_money("1234.5") == "$1234.50"
+
+
+def test_format_money_negative_puts_the_minus_before_the_symbol():
+    assert format_money("-5") == "-$5.00"
