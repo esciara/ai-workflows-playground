@@ -16,4 +16,5 @@ def round_money(value: Decimal | int | float | str) -> Decimal:
 def format_money(value: Decimal | int | float | str) -> str:
     """Format an amount for display, e.g. 1234.5 -> '$1234.50'."""
     amount = round_money(value)
-    return f"${amount}"
+    sign = "-" if amount < 0 else ""
+    return f"{sign}${abs(amount)}"
