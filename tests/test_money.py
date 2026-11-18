@@ -2,7 +2,7 @@ from decimal import Decimal
 
 import pytest
 
-from minicart.money import round_money, to_decimal
+from minicart.money import format_money, round_money, to_decimal
 
 
 @pytest.mark.parametrize(
@@ -15,3 +15,7 @@ def test_round_money(raw, expected):
 
 def test_to_decimal_avoids_float_artefacts():
     assert to_decimal(0.1) == Decimal("0.1")
+
+
+def test_format_money_positive():
+    assert format_money("1234.5") == "$1234.50"
