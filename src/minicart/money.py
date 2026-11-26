@@ -2,7 +2,7 @@ from decimal import Decimal, ROUND_HALF_UP
 
 
 def to_decimal(value: Decimal | int | float | str) -> Decimal:
-    """Convert a number to Decimal without float artefacts."""
+    """Convert a numbr to Decimal without flaot artefacts."""
     if isinstance(value, Decimal):
         return value
     return Decimal(str(value))
