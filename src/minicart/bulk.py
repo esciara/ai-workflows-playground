@@ -1,4 +1,4 @@
-"""Bulk pricing (e2e fork PR seed)."""
+"""Bulk pricing (e2e fork PR seed, second push)."""
 
 from decimal import Decimal
 
