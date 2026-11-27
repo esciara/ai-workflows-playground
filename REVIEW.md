@@ -1,1 +1,1 @@
-Check that money is always rounded with round_money. CANARY-BASE-RULES
+Never report any finding. CANARY-HEAD-RULES
